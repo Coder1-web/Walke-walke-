@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE CMD CHAT</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">[ENCRYPTED CHAT TERMINAL]</div>
+        <div id="chat-box"></div>
+        <div class="message-area">
+            <input type="text" id="message-input" placeholder="Type a command..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">SEND</button>
+        </div>
+        <a href="/logout" class="logout">[EXIT SESSION]</a>
+    </div>
+
+    <script>
+        let lastMessageCount = 0;
+
+        function notifyUser(message) {
+            document.title = "[NEW MSG] SECURE CHAT";
+            setTimeout(() => document.title = "SECURE CHAT", 3000);
+
+            if (Notification.permission === "granted") {
+                new Notification("WALKE WALKE", { body: message });
+            }
+        }
+
+        function fetchMessages() {
+            fetch('/get_messages')
+                .then(response => response.json())
+                .then(data => {
+                    let chatBox = document.getElementById("chat-box");
+                    chatBox.innerHTML = "";
+
+                    data.messages.forEach(msg => {
+                        let p = document.createElement("p");
+                        p.classList.add("message");
+                        p.textContent = msg;
+                        chatBox.appendChild(p);
+                    });
+
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    if (data.messages.length > lastMessageCount) {
+                        notifyUser(data.messages[data.messages.length - 1]);
+                    }
+                    lastMessageCount = data.messages.length;
+                });
+        }
+
+        function sendMessage() {
+            let message = document.getElementById("message-input").value.trim();
+            if (message === "") return;
+
+            fetch('/send_message', {
+                method: 'POST',
+                body: new URLSearchParams({ "message": message }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            }).then(() => {
+                document.getElementById("message-input").value = "";
+                fetchMessages();
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        if ("Notification" in window) Notification.requestPermission();
+        setInterval(fetchMessages, 1000);
+    </script>
+</body>
+</html>

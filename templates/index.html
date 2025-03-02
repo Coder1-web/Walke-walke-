@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secured Communication System|WALKE WALKE|</title>
+    <style>
+        body {
+            background-color: black;
+            color: #00ff00;
+            font-family: "Courier New", monospace;
+            text-align: center;
+        }
+
+        .container {
+            width: 50%;
+            margin: auto;
+            margin-top: 50px;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px #00ff00;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        h1 {
+            text-shadow: 0 0 15px #00ff00;
+        }
+
+        input, button {
+            background-color: black;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            font-family: monospace;
+            padding: 12px;
+            margin: 8px;
+            width: 85%;
+            text-align: center;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #00ff00;
+            color: black;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        #output {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: left;
+            background-color: black;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .glow-text {
+            color: #00ff00;
+            text-shadow: 0px 0px 15px #00ff00;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="glow-text">Secure Communication System</h1>
+
+    <div id="login-section" class="container">
+        <h2>Authentication Required</h2>
+        <input type="text" id="username" placeholder="Enter Username">
+        <input type="password" id="password" placeholder="Enter Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="chat-section" class="container hidden">
+        <p>Logged in as: <span id="current-user"></span></p>
+        <button onclick="logout()">Logout</button>
+        <div id="output"></div>
+        <input type="text" id="message" placeholder="Type message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            if (username.trim() === "" || password.trim() === "") {
+                alert("Access Denied: Missing Credentials");
+                return;
+            }
+
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    document.getElementById("login-section").classList.add("hidden");
+                    document.getElementById("chat-section").classList.remove("hidden");
+                    document.getElementById("current-user").innerText = username;
+                    loadMessages();
+                } else {
+                    alert("Access Denied: Invalid Credentials");
+                }
+            });
+        }
+
+        function logout() {
+            fetch("/logout", { method: "POST" })
+            .then(() => {
+                location.reload();
+            });
+        }
+
+        function sendMessage() {
+            let message = document.getElementById("message").value;
+            fetch("/send_message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message })
+            })
+            .then(() => {
+                loadMessages();
+                document.getElementById("message").value = "";
+            });
+        }
+
+        function loadMessages() {
+            fetch("/get_messages")
+            .then(response => response.json())
+            .then(data => {
+                let outputDiv = document.getElementById("output");
+                outputDiv.innerHTML = "";
+                data.messages.forEach(msg => {
+                    outputDiv.innerHTML += "<p>> " + msg + "</p>";
+                });
+            });
+        }
+    </script>
+</body>
+</html>
